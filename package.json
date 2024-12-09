@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "day4": "nodemon day4.js"
+    "day1": "nodemon day1.js",
+    "day2": "nodemon day2.js",
+    "day3": "nodemon day3.js",
+    "day4": "nodemon day4.js",
+    "day5": "nodemon day5.js"
   },
   "author": "",
   "license": "ISC",
