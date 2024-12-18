@@ -2,6 +2,12 @@ const parseInput = (input) => {
   return input.split("\n").map((row) => row.split(""));
 };
 
+const printMap = (map) => {
+  for (const row of map) {
+    console.log(row.join(""));
+  }
+};
+
 const count1 = (input) => {
   const map = parseInput(input);
 
@@ -129,6 +135,350 @@ const count1 = (input) => {
         map[currentY][currentX + 1] = ">";
       }
       map[currentY][currentX] = "X";
+    }
+  }
+
+  return rslt;
+};
+
+const getInitialPath = (originalMap) => {
+  const map = JSON.parse(JSON.stringify(originalMap));
+
+  const maxX = map[0].length - 1;
+  const maxY = map.length - 1;
+
+  console.log({ maxX, maxY });
+  const intialPath = [];
+  let staringPoint = null;
+
+  let i = 0;
+  let k = 0;
+  const maxSteps = maxX * maxY * maxX;
+
+  while (true) {
+    if (k > maxSteps) break;
+
+    const currentY = map.findIndex(
+      (row) =>
+        row.includes("^") ||
+        row.includes("v") ||
+        row.includes("<") ||
+        row.includes(">")
+    );
+
+    const currentRow = map[currentY];
+    const currentX = currentRow.findIndex(
+      (cell) => cell === "^" || cell === "v" || cell === "<" || cell === ">"
+    );
+
+    const currentCell = currentRow[currentX];
+
+    if (i === 0) {
+      staringPoint = { x: currentX, y: currentY };
+      i++;
+    }
+
+    // check outerbounds
+    if (currentCell === "^" && currentY === 0) break;
+    if (currentCell === "v" && currentY === maxY) break;
+    if (currentCell === "<" && currentX === 0) break;
+    if (currentCell === ">" && currentX === maxX) break;
+
+    const { nextPoint, nextDir } = getNextPoint(map, currentX, currentY);
+    if (!nextPoint) {
+      console.log("getInitialPath: nextPoint not found");
+      return intialPath;
+    }
+
+    // console.log("intialPath", { nextPoint, nextDir });
+
+    // add next point to path if not exist and not intialPoint
+    if (
+      nextPoint &&
+      !(nextPoint.x === staringPoint.x && nextPoint.y === staringPoint.y)
+    ) {
+      const isExist = intialPath.find(
+        (point) => point.x === nextPoint.x && point.y === nextPoint.y
+      );
+      if (!isExist) {
+        intialPath.push(nextPoint);
+      } else {
+        k++;
+      }
+    }
+
+    // update guard's position
+    map[currentY][currentX] = "X";
+    map[nextPoint.y][nextPoint.x] = nextDir;
+  }
+
+  return intialPath;
+};
+
+const getNextPoint = (map, currentX, currentY) => {
+  const currentCell = map[currentY][currentX];
+
+  const aboveCell = {
+    x: currentX,
+    y: currentY - 1,
+    value: map[currentY - 1][currentX],
+  };
+
+  const belowCell = {
+    x: currentX,
+    y: currentY + 1,
+    value: map[currentY + 1][currentX],
+  };
+
+  const leftCell = {
+    x: currentX - 1,
+    y: currentY,
+    value: map[currentY][currentX - 1],
+  };
+
+  const rightCell = {
+    x: currentX + 1,
+    y: currentY,
+    value: map[currentY][currentX + 1],
+  };
+
+  let cellsToCheck = [];
+
+  switch (currentCell) {
+    case "^":
+      cellsToCheck = [aboveCell, rightCell, belowCell, leftCell];
+      break;
+    case "v":
+      cellsToCheck = [belowCell, rightCell, aboveCell, leftCell];
+      break;
+    case "<":
+      cellsToCheck = [leftCell, aboveCell, rightCell, belowCell];
+      break;
+    case ">":
+      cellsToCheck = [rightCell, belowCell, leftCell, aboveCell];
+      break;
+  }
+
+  let obstaceStrs = [];
+  let currentDir = currentCell;
+
+  for (const cell of cellsToCheck) {
+    if (cell.value === "#") {
+      obstaceStrs.push(`${cell.x};${cell.y};${currentDir}`);
+      switch (currentDir) {
+        case "^":
+          currentDir = ">";
+          break;
+        case ">":
+          currentDir = "v";
+          break;
+        case "v":
+          currentDir = "<";
+          break;
+        case "<":
+          currentDir = "^";
+          break;
+      }
+    } else {
+      return {
+        nextPoint: { x: cell.x, y: cell.y },
+        nextDir: currentDir,
+        obstaceStrs,
+      };
+    }
+  }
+
+  return {
+    nextPoint: null,
+    nextDir: currentDir,
+    obstaceStrs,
+  };
+};
+
+const isLoop = (map) => {
+  const maxX = map[0].length - 1;
+  const maxY = map.length - 1;
+
+  const obstacles = [];
+
+  while (true) {
+    const currentY = map.findIndex(
+      (row) =>
+        row.includes("^") ||
+        row.includes("v") ||
+        row.includes("<") ||
+        row.includes(">")
+    );
+
+    const currentRow = map[currentY];
+    const currentX = currentRow.findIndex(
+      (cell) => cell === "^" || cell === "v" || cell === "<" || cell === ">"
+    );
+
+    const currentCell = currentRow[currentX];
+    // check outerbounds
+    if (currentCell === "^" && currentY === 0) break;
+    if (currentCell === "v" && currentY === maxY) break;
+    if (currentCell === "<" && currentX === 0) break;
+    if (currentCell === ">" && currentX === maxX) break;
+
+    // check next cell
+    /*
+    if (currentCell === "^") {
+      const aboveCell = map[currentY - 1][currentX];
+
+      if (aboveCell === "#") {
+        const aboveCellStr = `${currentY - 1};${currentX};${currentCell}`;
+        if (obstacles.includes(aboveCellStr)) {
+          return true;
+        }
+        obstacles.push(aboveCellStr);
+
+        if (currentX === maxX) {
+          break;
+        }
+        const rightCell = map[currentY][currentX + 1];
+        if (rightCell === ".") {
+          map[currentY][currentX + 1] = ">";
+        }
+        if (rightCell === "#") {
+          const rightCellStr = `${currentY};${currentX + 1};>`;
+          if (obstacles.includes(rightCellStr)) {
+            return true;
+          }
+          obstacles.push(rightCellStr);
+
+          const belowCell = map[currentY + 1][currentX];
+          if (belowCell === ".") {
+            map[currentY + 1][currentX] = "v";
+          }
+          if (belowCell === "#") {
+            const belowCellStr = `${currentY + 1};${currentX};v`;
+            if (obstacles.includes(belowCellStr)) {
+              return true;
+            }
+            obstacles.push(belowCellStr);
+
+            const leftCell = map[currentY][currentX - 1];
+          }
+        }
+      } else {
+        const aboveCell = map[currentY - 1][currentX];
+        map[currentY - 1][currentX] = "^";
+      }
+    }
+
+    if (currentCell === "v") {
+      const belowCell = map[currentY + 1][currentX];
+
+      if (belowCell === "#") {
+        const belowCellStr = `${currentY + 1};${currentX};${currentCell}`;
+        if (obstacles.includes(belowCellStr)) {
+          return true;
+        }
+        obstacles.push(belowCellStr);
+
+        if (currentX === 0) {
+          break;
+        }
+        map[currentY][currentX - 1] = "<";
+      } else {
+        const belowCell = map[currentY + 1][currentX];
+        map[currentY + 1][currentX] = "v";
+      }
+    }
+
+    if (currentCell === "<") {
+      const leftCell = map[currentY][currentX - 1];
+
+      if (leftCell === "#") {
+        const leftCellStr = `${currentY};${currentX - 1};${currentCell}`;
+        if (obstacles.includes(leftCellStr)) {
+          return true;
+        }
+        obstacles.push(leftCellStr);
+
+        if (currentY === 0) {
+          break;
+        }
+        const aboveCell = map[currentY - 1][currentX];
+        map[currentY - 1][currentX] = "^";
+      } else {
+        const leftCell = map[currentY][currentX - 1];
+
+        map[currentY][currentX - 1] = "<";
+      }
+    }
+
+    if (currentCell === ">") {
+      const rightCell = map[currentY][currentX + 1];
+
+      if (rightCell === "#") {
+        const rightCellStr = `${currentY};${currentX + 1};${currentCell}`;
+        if (obstacles.includes(rightCellStr)) {
+          return true;
+        }
+        obstacles.push(rightCellStr);
+
+        if (currentY === maxY) {
+          break;
+        }
+        const belowCell = map[currentY + 1][currentX];
+        map[currentY + 1][currentX] = "v";
+      } else {
+        const rightCell = map[currentY][currentX + 1];
+        map[currentY][currentX + 1] = ">";
+      }
+    }
+    */
+
+    const { nextPoint, nextDir, obstaceStrs } = getNextPoint(
+      map,
+      currentX,
+      currentY
+    );
+
+    if (!nextPoint) {
+      console.log("isLoop: nextPoint not found");
+      return true;
+    }
+
+    for (const obstaceStr of obstaceStrs) {
+      if (obstacles.includes(obstaceStr)) {
+        return true;
+      }
+      obstacles.push(obstaceStr);
+    }
+
+    // update guard's position
+    map[currentY][currentX] = "X";
+    map[nextPoint.y][nextPoint.x] = nextDir;
+  }
+
+  return false;
+};
+
+const count2 = (input) => {
+  const map = parseInput(input);
+  let rslt = 0;
+
+  const initialPath = getInitialPath(map);
+
+  console.log({ initialPath });
+
+  for (const point of initialPath) {
+    const mapCopy = JSON.parse(JSON.stringify(map));
+
+    const currentCell = map[point.y][point.x];
+
+    if (currentCell !== ".") continue;
+
+    mapCopy[point.y][point.x] = "#";
+
+    const isLooped = isLoop(mapCopy);
+    if (isLooped) {
+      // console.log("looped", { point });
+      rslt++;
     }
   }
 
@@ -277,5 +627,8 @@ const input2 = `#.............#.#...............................................
 ........#..##................#.....#.#..............#..............................#........................#.........#...........
 .........................................................#...........................##..........#........#.##....................`;
 
-const rslt1 = count1(input2);
-console.log(rslt1);
+// const rslt1 = count1(input2);
+// console.log(rslt1);
+
+const rslt2 = count2(input2);
+console.log(rslt2);
