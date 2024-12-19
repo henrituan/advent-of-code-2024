@@ -9,7 +9,8 @@
     "day3": "nodemon day3.js",
     "day4": "nodemon day4.js",
     "day5": "nodemon day5.js",
-    "day6": "nodemon day6.js"
+    "day6": "nodemon day6.js",
+    "day7": "nodemon day7.js"
   },
   "author": "",
   "license": "ISC",
