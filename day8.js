@@ -4,29 +4,102 @@ const parseInput = (input) => {
   return grid;
 };
 
+const printRslt = (input, markedNodes) => {
+  let rslt = "";
+
+  for (let i = 0; i < input.length; i++) {
+    for (let j = 0; j < input[0].length; j++) {
+      const nodeStr = `${j}_${i}`;
+      if (markedNodes.includes(nodeStr)) {
+        rslt = rslt + "#";
+      } else {
+        rslt = rslt + input[i][j];
+      }
+    }
+    rslt = rslt + "\n";
+  }
+
+  console.log(rslt);
+};
+
 const getAntiNodes = (node1, node2, maxX, maxY) => {
   const deltaX = node1.x - node2.x;
   const deltaY = node1.y - node2.y;
 
-  let anitNode1 = { x: node1.x + deltaX, y: node1.y + deltaY };
-  let anitNode2 = { x: node2.x - deltaX, y: node2.y - deltaY };
+  let antiNode1 = { x: node1.x + deltaX, y: node1.y + deltaY };
+  let antiNode2 = { x: node2.x - deltaX, y: node2.y - deltaY };
 
   if (
-    anitNode1.x > maxX ||
-    anitNode1.y > maxY ||
-    anitNode1.x < 0 ||
-    anitNode1.y < 0
+    antiNode1.x > maxX ||
+    antiNode1.y > maxY ||
+    antiNode1.x < 0 ||
+    antiNode1.y < 0
   )
-    anitNode1 = null;
+    antiNode1 = null;
   if (
-    anitNode2.x > maxX ||
-    anitNode2.y > maxY ||
-    anitNode2.x < 0 ||
-    anitNode2.y < 0
+    antiNode2.x > maxX ||
+    antiNode2.y > maxY ||
+    antiNode2.x < 0 ||
+    antiNode2.y < 0
   )
-    anitNode2 = null;
+    antiNode2 = null;
 
-  return [anitNode1, anitNode2].filter((node) => node !== null);
+  return [antiNode1, antiNode2].filter((node) => node !== null);
+};
+
+const getAntiNodes2 = (node1, node2, maxX, maxY) => {
+  const deltaX = node1.x - node2.x;
+  const deltaY = node1.y - node2.y;
+
+  const rslt = [node1, node2];
+
+  let isOutOfBound1 = false;
+  let isOutOfBound2 = false;
+  const nextNode1 = {
+    x: node1.x,
+    y: node1.y,
+  };
+  const nextNode2 = {
+    x: node2.x,
+    y: node2.y,
+  };
+
+  while (true) {
+    const antiNode1 = { x: nextNode1.x + deltaX, y: nextNode1.y + deltaY };
+    const antiNode2 = { x: nextNode2.x - deltaX, y: nextNode2.y - deltaY };
+
+    if (
+      !isOutOfBound1 &&
+      antiNode1.x <= maxX &&
+      antiNode1.y <= maxY &&
+      antiNode1.x >= 0 &&
+      antiNode1.y >= 0
+    ) {
+      rslt.push(antiNode1);
+      nextNode1.x = antiNode1.x;
+      nextNode1.y = antiNode1.y;
+    } else {
+      isOutOfBound1 = true;
+    }
+
+    if (
+      !isOutOfBound2 &&
+      antiNode2.x <= maxX &&
+      antiNode2.y <= maxY &&
+      antiNode2.x >= 0 &&
+      antiNode2.y >= 0
+    ) {
+      rslt.push(antiNode2);
+      nextNode2.x = antiNode2.x;
+      nextNode2.y = antiNode2.y;
+    } else {
+      isOutOfBound2 = true;
+    }
+
+    if (isOutOfBound1 && isOutOfBound2) break;
+  }
+
+  return rslt;
 };
 
 const main = () => {
@@ -53,12 +126,14 @@ const main = () => {
   }
 
   Object.values(nodeGroups).forEach((nodeGroup) => {
+    if (nodeGroup.length <= 1) return;
+
     for (let i = 0; i < nodeGroup.length - 1; i++) {
       for (let j = i + 1; j < nodeGroup.length; j++) {
         const node1 = nodeGroup[i];
         const node2 = nodeGroup[j];
 
-        const antiNodes = getAntiNodes(node1, node2, maxX, maxY);
+        const antiNodes = getAntiNodes2(node1, node2, maxX, maxY);
 
         antiNodes.forEach((antiNode) => {
           const str = `${antiNode.x}_${antiNode.y}`;
@@ -72,6 +147,8 @@ const main = () => {
 
   console.log(markedNodes);
   console.log(markedNodes.length);
+
+  // printRslt(input, markedNodes);
 };
 
 const input1 = `............
